@@ -82,6 +82,7 @@ enum {
   OPT_CONTENTS,
   OPT_DIRECT_KEY,
   OPT_FILENAMES,
+  OPT_IV_FROM_FS,
   OPT_IV_INO_LBLK_32,
   OPT_IV_INO_LBLK_64,
   OPT_PADDING,
@@ -128,6 +129,9 @@ static void __attribute__((__noreturn__)) usage(FILE *out) {
       "            optimize for UFS inline crypto hardware\n"
       "        --iv-ino-lblk-32\n"
       "            optimize for eMMC inline crypto hardware (not recommended)\n"
+      "        --iv-from-fs\n"
+      "            only usable with certain filesystems that don't support\n"
+      "            other policies\n"
       "\nNotes:\n"
       "  Keys are identified by 32-character hex strings (key identifiers).\n"
       "\n"
@@ -554,6 +558,11 @@ static void show_policy_flags(uint8_t flags) {
     flags &= ~FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32;
   }
 
+  if (flags & FSCRYPT_POLICY_FLAG_IV_FROM_FS) {
+    printf(", IV_FROM_FS");
+    flags &= ~FSCRYPT_POLICY_FLAG_IV_FROM_FS;
+  }
+
   if (flags != 0) {
     printf(", Unknown (%02x)", flags);
   }
@@ -627,6 +636,7 @@ static int cmd_set_policy(int argc, char *const argv[]) {
       {"direct-key", no_argument, NULL, OPT_DIRECT_KEY},
       {"iv-ino-lblk-64", no_argument, NULL, OPT_IV_INO_LBLK_64},
       {"iv-ino-lblk-32", no_argument, NULL, OPT_IV_INO_LBLK_32},
+      {"iv-from-fs", no_argument, NULL, OPT_IV_FROM_FS},
       {NULL, 0, NULL, 0}};
 
   int ch, padding_flag;
@@ -662,6 +672,9 @@ static int cmd_set_policy(int argc, char *const argv[]) {
       case OPT_IV_INO_LBLK_32:
         printf("warning: --iv-ino-lblk-32 should normally not be used\n");
         flags |= FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32;
+        break;
+      case OPT_IV_FROM_FS:
+        flags |= FSCRYPT_POLICY_FLAG_IV_FROM_FS;
         break;
       default:
         usage(stderr);
